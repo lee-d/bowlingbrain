@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: Bowling Brain API
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+paths:
+  /games:
+    post:
+      tags:
+        - Games
+      operationId: createGame
+      summary: Create a new bowling game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGameRequest'
+      responses:
+        '201':
+          description: Game created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameDto'
+
+  /games/{gameId}:
+    get:
+      tags:
+        - Games
+      operationId: getGame
+      summary: Retrieve a game by ID
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameDto'
+        '404':
+          description: Game not found
+
+  /games/{gameId}/players:
+    post:
+      tags:
+        - Games
+      operationId: addPlayer
+      summary: Add a player to a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPlayerRequest'
+      responses:
+        '201':
+          description: Player added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameDto'
+        '404':
+          description: Game not found
+
+  /games/{gameId}/players/{playerId}/frames:
+    post:
+      tags:
+        - Games
+      operationId: addFrame
+      summary: Add a frame to a player
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Frame added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameDto'
+        '404':
+          description: Game or player not found
+
+  /games/{gameId}/players/{playerId}/frames/{frameId}/rolls:
+    post:
+      tags:
+        - Games
+      operationId: addRoll
+      summary: Add a roll to a frame
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: frameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRollRequest'
+      responses:
+        '201':
+          description: Roll added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameDto'
+        '404':
+          description: Game, player or frame not found
+
+components:
+  schemas:
+    CreateGameRequest:
+      type: object
+      required:
+        - playerNames
+      properties:
+        playerNames:
+          type: array
+          minItems: 1
+          items:
+            type: string
+
+    AddPlayerRequest:
+      type: object
+      required:
+        - playerName
+      properties:
+        playerName:
+          type: string
+
+    AddRollRequest:
+      type: object
+      required:
+        - smashedPins
+      properties:
+        smashedPins:
+          type: integer
+          minimum: 0
+          maximum: 10
+
+    GameDto:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerDto'
+        currentPlayerId:
+          type: string
+
+    PlayerDto:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        frames:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/FrameDto'
+
+    FrameDto:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        rolls:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/RollDto'
+        score:
+          type: integer
+          readOnly: true
+          nullable: true
+
+    RollDto:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        smashedPins:
+          type: integer
+          minimum: 0
+          maximum: 10
