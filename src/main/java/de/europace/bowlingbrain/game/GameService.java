@@ -50,6 +50,23 @@ public class GameService {
         return gameRepository.save(game);
     }
 
+    public Game advanceToNextPlayer(String gameId) {
+        final Game game = loadGame(gameId);
+        final List<Player> players = game.getPlayers();
+        final int currentIndex = findPlayerIndex(players, game.getCurrentPlayerId());
+        game.setCurrentPlayerId(players.get((currentIndex + 1) % players.size()).getId());
+        return gameRepository.save(game);
+    }
+
+    private int findPlayerIndex(List<Player> players, String playerId) {
+        for (int i = 0; i < players.size(); i++) {
+            if (players.get(i).getId().equals(playerId)) {
+                return i;
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Current player not found");
+    }
+
     private Game loadGame(String gameId) {
         return gameRepository.findById(gameId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));

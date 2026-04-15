@@ -53,7 +53,10 @@ class GameControllerIntegrationTest {
                 .andExpect(jsonPath("$.players.length()").value(2))
                 .andExpect(jsonPath("$.players[0].name").value("Alice"))
                 .andExpect(jsonPath("$.players[1].name").value("Bob"))
-                .andExpect(jsonPath("$.currentPlayerId").isNotEmpty());
+                .andExpect(jsonPath("$.currentPlayerId").isNotEmpty())
+                .andExpect(jsonPath("$._links.self.href").isNotEmpty())
+                .andExpect(jsonPath("$._links['next-player'].href").isNotEmpty())
+                .andExpect(jsonPath("$.players[0]._links.self.href").isNotEmpty());
     }
 
     @Test
@@ -146,6 +149,50 @@ class GameControllerIntegrationTest {
         final String response = addRoll(gameId, playerId, frameId, 4);
 
         assertThat((Integer) JsonPath.read(response, "$.players[0].frames[0].score")).isEqualTo(7);
+    }
+
+    @Test
+    void shouldAdvanceToNextPlayer() throws Exception {
+        final String response = mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "playerNames": ["Alice", "Bob"] }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        final String gameId = JsonPath.read(response, "$.id");
+        final String firstPlayerId = JsonPath.read(response, "$.players[0].id");
+        final String secondPlayerId = JsonPath.read(response, "$.players[1].id");
+        assertThat((String) JsonPath.read(response, "$.currentPlayerId")).isEqualTo(firstPlayerId);
+
+        final String nextResponse = mockMvc.perform(post(BASE_URL + "/" + gameId + "/current-player/next"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat((String) JsonPath.read(nextResponse, "$.currentPlayerId")).isEqualTo(secondPlayerId);
+    }
+
+    @Test
+    void shouldWrapAroundToFirstPlayerAfterLast() throws Exception {
+        final String response = mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "playerNames": ["Alice", "Bob"] }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        final String gameId = JsonPath.read(response, "$.id");
+        final String firstPlayerId = JsonPath.read(response, "$.players[0].id");
+
+        mockMvc.perform(post(BASE_URL + "/" + gameId + "/current-player/next"));
+
+        final String wrappedResponse = mockMvc.perform(post(BASE_URL + "/" + gameId + "/current-player/next"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat((String) JsonPath.read(wrappedResponse, "$.currentPlayerId")).isEqualTo(firstPlayerId);
     }
 
     @Test

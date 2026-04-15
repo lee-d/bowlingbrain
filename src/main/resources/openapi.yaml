@@ -142,6 +142,28 @@ paths:
         '404':
           description: Game, player or frame not found
 
+  /games/{gameId}/current-player/next:
+    post:
+      tags:
+        - Games
+      operationId: advanceToNextPlayer
+      summary: Advance to the next player
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current player advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameDto'
+        '404':
+          description: Game not found
+
 components:
   schemas:
     CreateGameRequest:
@@ -173,6 +195,12 @@ components:
           minimum: 0
           maximum: 10
 
+    LinkDto:
+      type: object
+      properties:
+        href:
+          type: string
+
     GameDto:
       type: object
       properties:
@@ -185,6 +213,10 @@ components:
             $ref: '#/components/schemas/PlayerDto'
         currentPlayerId:
           type: string
+        _links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LinkDto'
 
     PlayerDto:
       type: object
@@ -199,6 +231,10 @@ components:
           maxItems: 10
           items:
             $ref: '#/components/schemas/FrameDto'
+        _links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LinkDto'
 
     FrameDto:
       type: object
@@ -215,6 +251,10 @@ components:
           type: integer
           readOnly: true
           nullable: true
+        _links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LinkDto'
 
     RollDto:
       type: object
@@ -226,3 +266,7 @@ components:
           type: integer
           minimum: 0
           maximum: 10
+        _links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LinkDto'

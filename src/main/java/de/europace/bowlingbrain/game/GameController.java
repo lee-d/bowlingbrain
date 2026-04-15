@@ -18,34 +18,45 @@ public class GameController implements GamesApi {
 
     private final GameService gameService;
     private final GameMapper gameMapper;
+    private final GameLinkEnricher gameLinkEnricher;
 
     @Override
     public ResponseEntity<GameDto> createGame(CreateGameRequest createGameRequest) {
         final Game game = gameService.createGame(createGameRequest.getPlayerNames());
-        return ResponseEntity.status(HttpStatus.CREATED).body(gameMapper.toDto(game));
+        return ResponseEntity.status(HttpStatus.CREATED).body(enrich(game));
     }
 
     @Override
     public ResponseEntity<GameDto> getGame(String gameId) {
         final Game game = gameService.getGame(gameId);
-        return ResponseEntity.ok(gameMapper.toDto(game));
+        return ResponseEntity.ok(enrich(game));
     }
 
     @Override
     public ResponseEntity<GameDto> addPlayer(String gameId, AddPlayerRequest addPlayerRequest) {
         final Game game = gameService.addPlayer(gameId, addPlayerRequest.getPlayerName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(gameMapper.toDto(game));
+        return ResponseEntity.status(HttpStatus.CREATED).body(enrich(game));
     }
 
     @Override
     public ResponseEntity<GameDto> addFrame(String gameId, String playerId) {
         final Game game = gameService.addFrame(gameId, playerId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(gameMapper.toDto(game));
+        return ResponseEntity.status(HttpStatus.CREATED).body(enrich(game));
     }
 
     @Override
     public ResponseEntity<GameDto> addRoll(String gameId, String playerId, String frameId, AddRollRequest addRollRequest) {
         final Game game = gameService.addRoll(gameId, playerId, frameId, addRollRequest.getSmashedPins());
-        return ResponseEntity.status(HttpStatus.CREATED).body(gameMapper.toDto(game));
+        return ResponseEntity.status(HttpStatus.CREATED).body(enrich(game));
+    }
+
+    @Override
+    public ResponseEntity<GameDto> advanceToNextPlayer(String gameId) {
+        final Game game = gameService.advanceToNextPlayer(gameId);
+        return ResponseEntity.ok(enrich(game));
+    }
+
+    private GameDto enrich(Game game) {
+        return gameLinkEnricher.enrich(gameMapper.toDto(game));
     }
 }
